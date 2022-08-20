@@ -34,7 +34,7 @@ router.post('/users', asyncHandler(async (req, res) => {
     try {
         await User.create(req.body);
         res.location('/');
-        res.status(201).end;
+        res.status(201).end();
     } catch (err) {
         console.log('ERROR: ', err.name);
 
@@ -64,7 +64,8 @@ router.get('/courses/:id', asyncHandler(async (req, res) => {
 router.post('/courses', asyncHandler(async (req, res) => {
     try{
         await Course.create(req.body);
-        res.status(201)
+        res.location('/');
+        res.status(201).end();
     } catch (error) {
         console.log('ERROR: ', error.name);
 
