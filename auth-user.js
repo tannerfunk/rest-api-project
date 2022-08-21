@@ -6,11 +6,14 @@ const { User } = require('./models');
 
 exports.authenticateUser = async (req, res, next) => {
     let message;
+    //this is where the magic begins
     const credentials = auth(req);
-
+    //credentials holds the key and secret (email and password)
     if (credentials){
+        //find the user with those credentials!
         const user = await User.findOne({ where: { emailAddress: credentials.name }});
         if (user) {
+            //now compare the passwords of the credentials and what we've got in the database
             const authenticated = bcrypt
                 .compareSync(credentials.pass, user.password);
             if (authenticated) {

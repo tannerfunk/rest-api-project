@@ -26,8 +26,10 @@ function asyncHandler(cb) {
 
 // GET route that will return all properties and values for the currently authenticated User along with a 200 HTTP status code.
 router.get('/users', authenticateUser, asyncHandler(async (req, res) => {
+    //req.currentUser is SET to be the actual current user in the authenticateUser function
     let user = req.currentUser;
     res.status(200)
+    // just being picky about what to send back
     res.json({
         firstName: user.firstName,
         lastName: user.lastName,
@@ -39,12 +41,13 @@ router.get('/users', authenticateUser, asyncHandler(async (req, res) => {
 router.post('/users', asyncHandler(async (req, res) => {
 
     try {
+        //the request body holds the data in the post request..
         await User.create(req.body);
         res.location('/');
-        res.status(201).end();
+        res.status(201).end(); //if you don't add this .end() it will give you swirl forever
     } catch (err) {
         console.log('ERROR: ', err.name);
-
+        // checking our various errors!
         if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
             const errors = err.errors.map(err => err.message);
             res.status(400).json({ errors });   
@@ -58,6 +61,7 @@ router.post('/users', asyncHandler(async (req, res) => {
 //A /api/courses GET route that will return all courses including the User associated with each course and a 200 HTTP status code.
 router.get('/courses', asyncHandler(async (req, res) => {
     let courses = await Course.findAll({
+        // get all the courses and include this information and exclude that information
         include: [
           {
             model: User,
@@ -78,6 +82,7 @@ router.get('/courses', asyncHandler(async (req, res) => {
 // A /api/courses/:id GET route that will return the corresponding course including the User associated with that course and a 200 HTTP status code.
 router.get('/courses/:id', asyncHandler(async (req, res) => {
     let course = await Course.findByPk(req.params.id);
+    //based on the selected course, we're finding the user id to then grab OTHER info we want
     let user = await User.findByPk(course.userId);
     res.status(200)
     res.json({
@@ -85,6 +90,7 @@ router.get('/courses/:id', asyncHandler(async (req, res) => {
         descriptioin: course.description,
         estimatedTime: course.estimatedTime,
         materialsNeeded: course.materialsNeeded,
+        //this is super cool and readable AND wasn't taught i just kinda figured it out.. I don't know how practical this would be considering it's an API and not an App...
         student: `${user.firstName} ${user.lastName}`
     });
 }));
@@ -111,6 +117,7 @@ router.post('/courses', asyncHandler(async (req, res) => {
 router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) =>  {
     let course = await Course.findByPk(req.params.id);
     if (course) {
+        //check to see if the currentUser (as set by authenticateUser) is tryna mess with the stuff that has a matching userid to themselves
         if(req.currentUser.id === course.userId) {
             await course.update(req.body);
             res.status(204).end();

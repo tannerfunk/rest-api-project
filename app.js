@@ -25,6 +25,7 @@ app.get('/', (req, res) => {
   });
 });
 
+//this makes it necessary to put /api BEFORE any of my routes in routes.js
 app.use('/api', routes);
 
 // send 404 if no other route matched
