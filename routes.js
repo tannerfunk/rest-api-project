@@ -96,10 +96,10 @@ router.get('/courses/:id', asyncHandler(async (req, res) => {
 }));
 
 // A /api/courses POST route that will create a new course, set the Location header to the URI for the newly created course, and return a 201 HTTP status code and no content.
-router.post('/courses', asyncHandler(async (req, res) => {
+router.post('/courses', authenticateUser, asyncHandler(async (req, res) => {
     try{
-        await Course.create(req.body);
-        res.location('/');
+        const newCourse = await Course.create(req.body);
+        res.location(`/courses/${newCourse.id}`);
         res.status(201).end();
     } catch (error) {
         console.log('ERROR: ', error.name);
@@ -115,7 +115,8 @@ router.post('/courses', asyncHandler(async (req, res) => {
 
 // A /api/courses/:id PUT route that will update the corresponding course and return a 204 HTTP status code and no content.
 router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) =>  {
-    let course = await Course.findByPk(req.params.id);
+    try {
+        let course = await Course.findByPk(req.params.id);
     if (course) {
         //check to see if the currentUser (as set by authenticateUser) is tryna mess with the stuff that has a matching userid to themselves
         if(req.currentUser.id === course.userId) {
@@ -127,10 +128,20 @@ router.put('/courses/:id', authenticateUser, asyncHandler(async (req, res) =>  {
     } else {
         res.status(404).end();
     }
+    } catch (error) {
+        console.log('ERROR: ', error.name);
+
+        if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+            const errors = error.errors.map(err => err.message);
+            res.status(400).json({ errors });   
+        } else {
+            throw error;
+        }
+    }
 }));
 
 // A /api/courses/:id DELETE route that will delete the corresponding course and return a 204 HTTP status code and no content.
-router.delete('/courses/:id', asyncHandler(async (req, res) => {
+router.delete('/courses/:id', authenticateUser, asyncHandler(async (req, res) => {
     let course = await Course.findByPk(req.params.id);
     if (course) {
         if(req.currentUser.id === course.userId) {
