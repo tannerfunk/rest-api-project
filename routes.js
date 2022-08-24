@@ -79,21 +79,57 @@ router.get('/courses', asyncHandler(async (req, res) => {
     res.json({ courses });
 }));
 
+// HERE IS MY GET COURSES/:ID ROUTE!!!
+
 // A /api/courses/:id GET route that will return the corresponding course including the User associated with that course and a 200 HTTP status code.
+
+//OPTION A: Looks a little cleaner.. and visually looks the way the data will be outputted..
 router.get('/courses/:id', asyncHandler(async (req, res) => {
     let course = await Course.findByPk(req.params.id);
     //based on the selected course, we're finding the user id to then grab OTHER info we want
-    let user = await User.findByPk(course.userId);
+    let student = await User.findByPk(course.userId);
     res.status(200)
     res.json({
         title: course.title,
-        descriptioin: course.description,
+        description: course.description,
         estimatedTime: course.estimatedTime,
         materialsNeeded: course.materialsNeeded,
-        //this is super cool and readable AND wasn't taught i just kinda figured it out.. I don't know how practical this would be considering it's an API and not an App...
-        student: `${user.firstName} ${user.lastName}`
+        student: {
+            id: student.id,
+            firstName: student.firstName,
+            lastName: student.lastName,
+            emailAddress: student.emailAddress
+        }
     });
 }));
+        //ANOTHER WAY TO DO THIS WOULD BE SHOWN BELOW
+        // just from our original grabbing of the selected course we could pull the other information
+
+        // // OPTION B: Looks like it might be less code intensive because it's only using one variable? 
+// router.get('/courses/:id', asyncHandler(async (req, res) => {
+//     let course = await Course.findByPk(req.params.id, {
+//         include: [
+//             {
+//                 model: User,
+//                 as: 'student',
+//                 attributes: ['id', 'firstName', 'lastName', 'emailAddress'],
+//             }
+//         ], attributes: {
+//             exclude: [
+//                 'createdAt',
+//                 'updatedAt'
+//             ]
+//         }
+//     });
+//     res.status(200)
+//     res.json({
+//         title: course.title,
+//         descriptioin: course.description,
+//         estimatedTime: course.estimatedTime,
+//         materialsNeeded: course.materialsNeeded,
+//         student: course.student
+//     });
+// }));
 
 // A /api/courses POST route that will create a new course, set the Location header to the URI for the newly created course, and return a 201 HTTP status code and no content.
 router.post('/courses', authenticateUser, asyncHandler(async (req, res) => {
