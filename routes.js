@@ -83,53 +83,53 @@ router.get('/courses', asyncHandler(async (req, res) => {
 
 // A /api/courses/:id GET route that will return the corresponding course including the User associated with that course and a 200 HTTP status code.
 
-//OPTION A: Looks a little cleaner.. and visually looks the way the data will be outputted..
-router.get('/courses/:id', asyncHandler(async (req, res) => {
-    let course = await Course.findByPk(req.params.id);
-    //based on the selected course, we're finding the user id to then grab OTHER info we want
-    let student = await User.findByPk(course.userId);
-    res.status(200)
-    res.json({
-        title: course.title,
-        description: course.description,
-        estimatedTime: course.estimatedTime,
-        materialsNeeded: course.materialsNeeded,
-        student: {
-            id: student.id,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            emailAddress: student.emailAddress
-        }
-    });
-}));
-        //ANOTHER WAY TO DO THIS WOULD BE SHOWN BELOW
-        // just from our original grabbing of the selected course we could pull the other information
-
-        // // OPTION B: Looks like it might be less code intensive because it's only using one variable? 
+//OPTION A: Looks a little cleaner.. and visually looks the way the data will be outputted.. BUT AS I HAVE NOW LEARNED -> the double query is not good! We want to query as little as possible!
 // router.get('/courses/:id', asyncHandler(async (req, res) => {
-//     let course = await Course.findByPk(req.params.id, {
-//         include: [
-//             {
-//                 model: User,
-//                 as: 'student',
-//                 attributes: ['id', 'firstName', 'lastName', 'emailAddress'],
-//             }
-//         ], attributes: {
-//             exclude: [
-//                 'createdAt',
-//                 'updatedAt'
-//             ]
-//         }
-//     });
+//     let course = await Course.findByPk(req.params.id);
+//     //based on the selected course, we're finding the user id to then grab OTHER info we want
+//     let student = await User.findByPk(course.userId);
 //     res.status(200)
 //     res.json({
 //         title: course.title,
-//         descriptioin: course.description,
+//         description: course.description,
 //         estimatedTime: course.estimatedTime,
 //         materialsNeeded: course.materialsNeeded,
-//         student: course.student
+//         student: {
+//             id: student.id,
+//             firstName: student.firstName,
+//             lastName: student.lastName,
+//             emailAddress: student.emailAddress
+//         }
 //     });
 // }));
+        //A BETTER WAY TO DO THIS IS SHOWN BELOW
+        // just from our original grabbing of the selected course we could pull the other information
+
+        // // OPTION B: Only queries once, gets the necessary info.
+router.get('/courses/:id', asyncHandler(async (req, res) => {
+    let course = await Course.findByPk(req.params.id, {
+        include: [
+            {
+                model: User,
+                as: 'student',
+                attributes: ['id', 'firstName', 'lastName', 'emailAddress'],
+            }
+        ], attributes: {
+            exclude: [
+                'createdAt',
+                'updatedAt'
+            ]
+        }
+    });
+    res.status(200)
+    res.json({
+        title: course.title,
+        descriptioin: course.description,
+        estimatedTime: course.estimatedTime,
+        materialsNeeded: course.materialsNeeded,
+        student: course.student
+    });
+}));
 
 // A /api/courses POST route that will create a new course, set the Location header to the URI for the newly created course, and return a 201 HTTP status code and no content.
 router.post('/courses', authenticateUser, asyncHandler(async (req, res) => {
